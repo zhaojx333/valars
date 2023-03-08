@@ -1,0 +1,115 @@
+#include "stm32f4xx.h"
+#include "stm32f4xx_hal.h"
+#include "fatfs.h"
+#include "mp3dec.h"
+#include "jpeg.h"
+#include "lcd.h"
+#include "touch.h"
+#include "bluetooth.h"
+#include "wifi.h"
+
+/* 宏定义 */
+#define SD_PATH "0:/"
+#define MP3_PATH "0:/Music/"
+#define JPG_PATH "0:/Picture/"
+#define LCD_WIDTH 800
+#define LCD_HEIGHT 480
+#define LCD_BUFFER_SIZE (LCD_WIDTH * LCD_HEIGHT * 2)
+
+/* 全局变量 */
+FATFS fs;
+FIL file;
+MP3FrameInfo mp3FrameInfo;
+HMP3Decoder mp3Decoder;
+uint8_t mp3Buffer[MP3_BUFFER_SIZE];
+int16_t audioBuffer[AUDIO_BUFFER_SIZE];
+uint8_t jpegBuffer[JPEG_BUFFER_SIZE];
+uint16_t lcdBuffer[LCD_BUFFER_SIZE];
+uint8_t touchData[TOPIC_DATA_SIZE];
+char* mp3FileNameList[FILE_NAME_LIST_SIZE];
+char* jpegFileNameList[FILE_NAME_LIST_SIZE];
+int32_t mp3FileNum;
+int32_t jpegFileNum;
+int32_t currentMp3Index;
+int32_t currentJpegIndex;
+int32_t mp3TotalTime;
+int32_t mp3CurrentTime;
+uint8_t isPlaying;
+uint8_t isPaused;
+uint8_t isStopped;
+uint8_t isJpegLoaded;
+uint8_t isWifiConnected;
+uint8_t isBluetoothConnected;
+
+/* 函数声明 */
+void SystemClock_Config(void);
+void GPIO_Init(void);
+void DMA_Init(void);
+void USART1_Init(void);
+void USART2_Init(void);
+void SPI5_Init(void);
+void LCD_Init(void);
+void Touch_Init(void);
+void Bluetooth_Init(void);
+void Wifi_Init(void);
+void SD_Init(void);
+void Audio_Init(void);
+void Jpeg_Init(void);
+void File_List_Init(void);
+void File_List_Update(char* path, char* ext, char** fileList, int32_t* fileNum);
+void File_List_Sort(char** fileList, int32_t fileNum);
+void LCD_Clear(void);
+void LCD_Show_Picture(char* fileName);
+void LCD_Show_Jpeg(uint8_t* buffer, int32_t width, int32_t height);
+void LCD_Show_Menu(void);
+void LCD_Show_Info(char* info);
+void LCD_Show_Time(void);
+void Audio_Play(char* fileName);
+void Audio_Pause(void);
+void Audio_Stop(void);
+void Audio_Resume(void);
+void Audio_Set_Volume(uint8_t volume);
+void Audio_Get_Time(void);
+void Jpeg_Decode(char* fileName);
+void Jpeg_Draw(void);
+void Touch_Handle(void);
+void Bluetooth_Handle(void);
+void Wifi_Handle(void);
+
+int main(void)
+{
+    HAL_Init();
+
+    SystemClock_Config();
+
+    GPIO_Init();
+    DMA_Init();
+    USART1_Init();
+    USART2_Init();
+    SPI5_Init();
+    LCD_Init();
+    Touch_Init();
+    Bluetooth_Init();
+    Wifi_Init();
+    SD_Init();
+    Audio_Init();
+    Jpeg_Init();
+    File_List_Init();
+
+    while (1)
+    {
+        if (isJpegLoaded)
+        {
+            Jpeg_Draw();
+        }
+        else if (isPlaying && !isPaused && !isStopped)
+        {
+            Audio_Get_Time();
+        }
+
+        Touch_Handle();
+        Bluetooth_Handle();
+        Wifi_Handle();
+    }
+}
+
